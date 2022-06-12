@@ -1,0 +1,47 @@
+{
+  "name": "tvapps-epg-mobile",
+  "version": "1.0.9",
+  "description": "React Native EPG library for mobile app",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://forge-git-external.viaccess.fr/APPS/TVaaS/tvapps-epg-androidtv/-/tree/tvapps-epg-androidtv"
+  },
+  "keywords": [
+    "tvguide",
+    "tv",
+    "epg",
+    "epg",
+    "react",
+    "native",
+    "epg",
+    "react",
+    "native",
+    "tv",
+    "guide",
+    "tv",
+    "android",
+    "tv",
+    "guide",
+    "rn-tv",
+    "guide",
+    "rn",
+    "epg",
+    "tvapps-epg",
+    "androidtv",
+    "react-native-android-tv",
+    "react-native-android-tvguide",
+    "mobile-epg",
+    "react-native-epg",
+    "react native tvguide"
+  ],
+  "author": "Nexle Legacy team",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://forge-git-external.viaccess.fr/APPS/TVaaS/tvapps-epg-androidtv/-/tree/tvapps-epg-androidtv/issues"
+  },
+  "homepage": "https://forge-git-external.viaccess.fr/APPS/TVaaS/tvapps-epg-androidtv/-/tree/tvapps-epg-androidtv#readme"
+}
