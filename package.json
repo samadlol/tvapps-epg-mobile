@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://forge-git-external.viaccess.fr/APPS/TVaaS/tvapps-epg-androidtv/-/tree/tvapps-epg-androidtv"
+    "url": "git+https://github.com/samadlol/tvapps-epg-mobile"
   },
   "keywords": [
     "tvguide",
@@ -41,7 +41,7 @@
   "author": "Nexle Legacy team",
   "license": "ISC",
   "bugs": {
-    "url": "https://forge-git-external.viaccess.fr/APPS/TVaaS/tvapps-epg-androidtv/-/tree/tvapps-epg-androidtv/issues"
+    "url": "https://github.com/samadlol/tvapps-epg-mobile/issues"
   },
-  "homepage": "https://forge-git-external.viaccess.fr/APPS/TVaaS/tvapps-epg-androidtv/-/tree/tvapps-epg-androidtv#readme"
+  "homepage": "https://github.com/samadlol/tvapps-epg-mobile"
 }
