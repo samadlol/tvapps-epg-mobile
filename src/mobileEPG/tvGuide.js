@@ -22,30 +22,23 @@ var currentDateDisplay = new Date();
 var loadingTimeoutRef;
 var defaultFocusTimeoutRef;
 var lastScrollHorizontalOffset = null;
+var lastScrollVerticalOffset = null;
 
 function TVGuideComponent(props) {
   const {
     channeList = [],
     programList = [],
-    onReachingEndChannel,
+    onChannelsEndReached,
+    onProgramsEndReached,
     currentDate,
-    onDateChange,
-    onProgramSelectedChange,
-    programStylesColors,
-    programContainerStyles,
-    timeIndicatorStyles,
     tvGuideWidth,
     tvGuideHeight,
     timeLineHeaderHeight,
-    numberOfChannelsDisplayed,
-    numberOfTimelineCellDisplayed,
     channelListWidth,
     numberOfFutureDays,
     numberOfPastDays,
     containerBackroundColor,
     programLineHeight,
-    sizePerPage,
-    isLastPageOffset,
     renderChannel,
     renderEpgItem,
     renderTimeLineItem,
@@ -53,49 +46,33 @@ function TVGuideComponent(props) {
     timelineCellWidth,
     style,
     gridMargins,
+    renderLiveIndicator,
+    didLoadAllEpgs,
+    didLoadAllChannels,
+    onScroll,
   } = props;
 
-  const timelineHeaderRef = useRef(null);
-  const horizontalScrollRef = useRef(null);
-  const channelListRef = useRef(null);
-  const programListRef = useRef(null);
   const largeListRef = useRef(null);
   const isFetchingVertically = useRef(null);
   const timeout = useRef(null);
   const isFetching = useRef(null);
   const [timeIndicatorOffset, setTimeIndicatorOffset] = useState(null);
   const visibleTimeIndicator = compareTwoDates(currentDate, today);
-  const [visibleLoadingIndicator, setVisibleLoadingIndicator] = useState(true);
-  const timeIndicatorStylesFlatten = useMemo(
-    () => StyleSheet.flatten([styles.timeIndicator, timeIndicatorStyles]),
-    [timeIndicatorStyles]
-  );
   const containerStylesFlattten = useMemo(
     () =>
       StyleSheet.flatten([
-        style,
         styles.container,
         {
           width: tvGuideWidth,
           height: tvGuideHeight,
           backgroundColor: containerBackroundColor,
         },
+        style,
       ]),
     [tvGuideWidth, tvGuideHeight, containerBackroundColor]
   );
-  // const timelineCellWidth = (tvGuideWidth - channelListWidth) / numberOfTimelineCellDisplayed;
-  const programListContainerWidth = tvGuideWidth - channelListWidth;
-  const timeLineIndicatorHeight = tvGuideHeight + timeLineHeaderHeight;
-  const programLineHeightLayoutItem =
-    programLineHeight +
-    TV_GUIDE_CONSTANTS.THEME_STYLES.PROGRAM_LINE_MARGIN_BOTTOM;
-  const paddingBottomContaner =
-    numberOfChannelsDisplayed *
-    TV_GUIDE_CONSTANTS.THEME_STYLES.PROGRAM_LINE_MARGIN_BOTTOM;
-  const [programListIsScrolling, setProgramListIsScrolling] = useState(false);
   const [channelListState, setChannelListState] = useState([]);
   const [programListState, setProgramListState] = useState([]);
-  const [dateFilterSelected, setDateFilterSelected] = useState(currentDate);
   const [dataListFilter, setDataListFilter] = useState([]);
   const [timelineData, setTimelineData] = useState([]);
 
@@ -109,12 +86,7 @@ function TVGuideComponent(props) {
     );
   }, [timelineData]);
 
-  const onProgramSelectedChangeCallBack = ({ index, lineIndex, program }) => {
-    onProgramSelectedChange({ program });
-  };
-
   useEffect(() => {
-    // setChannelListState([...channeList]);
     const channelsState = channeList.map((channel) => ({
       channel,
       items: [""],
@@ -129,13 +101,8 @@ function TVGuideComponent(props) {
   useEffect(() => {
     if (programListState.length > 0 && lastScrollHorizontalOffset == null) {
       const offsetTimeline = getTimeIndicatorOffset();
-      const detalOffset =
-        (numberOfTimelineCellDisplayed * timelineCellWidth) /
-        numberOfTimelineCellDisplayed;
-      // scrollHorizontal(Math.abs(offsetTimeline - detalOffset));
-      // largeListRef.current.scrollTo({x: Math.abs(offsetTimeline - detalOffset),y: 0},false)
+      largeListRef.current.scrollTo(offsetTimeline, 0, false);
     }
-    setVisibleLoadingIndicator(false);
   }, [programListState]);
 
   useEffect(() => {
@@ -146,20 +113,11 @@ function TVGuideComponent(props) {
     }
   }, [currentDate]);
 
-  const onEndReachedProgramsList = () => {
-    if (isLastPageOffset === true) return;
-    onReachingEndChannel();
-  };
-
   useEffect(() => {
     if (timelineData.length > 0 && !timeIndicatorOffset) {
       setTimeIndicatorOffset(getTimeIndicatorOffset());
     }
   }, [timelineData]);
-
-  useEffect(() => {
-    console.log(timeIndicatorOffset);
-  }, [timeIndicatorOffset]);
 
   useEffect(() => {
     setTimelineData([...generateTimelineData(currentDateDisplay)]);
@@ -187,26 +145,40 @@ function TVGuideComponent(props) {
     };
   }, []);
 
-  const onScroll = (e) => {
+  const _onScroll = (e) => {
+    const {
+      nativeEvent: {
+        contentOffset: { x, y },
+        contentSize: { width, height },
+      },
+    } = e;
+    onScroll && onScroll(e);
     if (
-      Math.floor(e.nativeEvent.contentOffset.x) >=
+      Math.floor(x) >=
       Math.floor(timeIndicatorOffset + channelListWidth - timelineCellWidth)
     ) {
     } else {
     }
     if (
-      e.nativeEvent.contentOffset.x + 1000 >=
-      e.nativeEvent.contentSize.width
+      x &&
+      lastScrollHorizontalOffset &&
+      lastScrollHorizontalOffset !== x &&
+      x + timelineCellWidth * 3 >= width
     ) {
       onHorizontallyEndReached();
     }
     if (
-      e.nativeEvent.contentOffset.y + 1000 >=
-      e.nativeEvent.contentSize.height
+      y &&
+      lastScrollVerticalOffset &&
+      lastScrollVerticalOffset !== y &&
+      y + 1000 >= height
     ) {
       onVerticallyEndReached();
     }
+    lastScrollVerticalOffset = y;
+    lastScrollHorizontalOffset = x;
   };
+
   const getWidth = () => {
     let calculatedWidth =
       (timelineData?.length ?? 1) * (timelineCellWidth + gridMargins) +
@@ -214,20 +186,26 @@ function TVGuideComponent(props) {
       gridMargins;
     return calculatedWidth;
   };
+
   const onHorizontallyEndReached = () => {
-    if (isFetching.current === true) return;
+    if (didLoadAllEpgs) return;
     isFetching.current = true;
+    onProgramsEndReached && onProgramsEndReached();
   };
+
   const onVerticallyEndReached = () => {
-    if (isFetchingVertically.current === true) return;
+    if (didLoadAllChannels) return;
     isFetchingVertically.current = true;
+    onChannelsEndReached && onChannelsEndReached();
   };
+
   const goToLive = () => {
     largeListRef.current.scrollTo(
-      { y: 0, x: timeIndicatorOffset - channelListWidth },
+      { y: 0, x: timeIndicatorOffset - channelListWidth * 1.5 },
       false
     );
   };
+
   const _renderHeader = () => {
     return (
       <View
@@ -284,53 +262,45 @@ function TVGuideComponent(props) {
     <View>
       <View style={containerStylesFlattten}>
         <View style={styles.tvGuideContainer}>
-          {true && (
-            <StickyForm
-              style={{
-                zIndex: 100,
-                paddingTop: 0,
-                marginTop: 0,
-                paddingBottom:
-                  Dimensions.get("screen").width / 1.77 -
-                  (Dimensions.get("screen").width * 75) / 768,
-              }}
-              contentStyle={{
-                alignItems: "flex-start",
-                width: getWidth(),
-              }}
-              data={channelListState}
-              ref={(ref) => (largeListRef.current = ref)}
-              heightForSection={() => programLineHeight + gridMargins}
-              renderHeader={_renderHeader}
-              renderSection={_renderSection}
-              heightForIndexPath={() => 0}
-              renderIndexPath={_renderItem}
-              bounces={false}
-              initialContentOffset={{
-                x: timeIndicatorOffset - channelListWidth * 1.5,
-                y: 0,
-              }}
-              onScroll={onScroll}
-            >
-              {() => (
-                <>
-                  {
-                    <View
-                      style={{
-                        left: timeIndicatorOffset + channelListWidth,
-                        width: StyleSheet.hairlineWidth,
-                        backgroundColor: "yellow",
-                        position: "absolute",
-                        top: 0,
-                        bottom: 0,
-                        zIndex: 10000,
-                      }}
-                    />
-                  }
-                </>
-              )}
-            </StickyForm>
-          )}
+          <StickyForm
+            decelerationRate={0.1}
+            snapToOffsets={[
+              ...timelineData.map(
+                (x, i) => i * (timelineCellWidth + gridMargins)
+              ),
+            ]}
+            disableIntervalMomentum
+            snapToAlignment="start"
+            contentStyle={{
+              alignItems: "flex-start",
+              width: getWidth(),
+            }}
+            data={channelListState}
+            ref={(ref) => (largeListRef.current = ref)}
+            heightForSection={() => programLineHeight + gridMargins}
+            renderHeader={_renderHeader}
+            renderSection={_renderSection}
+            heightForIndexPath={() => 0}
+            renderIndexPath={_renderItem}
+            bounces={false}
+            initialContentOffset={{
+              x: timeIndicatorOffset - channelListWidth * 1.5,
+              y: 0,
+            }}
+            onScroll={_onScroll}
+          >
+            {() => (
+              <>
+                {renderLiveIndicator
+                  ? programListState.length || channelListState.length
+                    ? renderLiveIndicator({
+                        offset: timeIndicatorOffset + channelListWidth,
+                      })
+                    : null
+                  : null}
+              </>
+            )}
+          </StickyForm>
         </View>
       </View>
     </View>
