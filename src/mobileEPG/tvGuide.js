@@ -5,7 +5,7 @@ import React, {
   useRef,
   useMemo,
 } from "react";
-import { View, StyleSheet, Dimensions, Text } from "react-native";
+import { View, StyleSheet } from "react-native";
 import PropTypes from "prop-types";
 import { TV_GUIDE_CONSTANTS } from "./constants";
 import {
@@ -45,18 +45,27 @@ function TVGuideComponent(props) {
     renderLiveNowButton,
     timelineCellWidth,
     style,
+    contentContainerStyle,
     gridMargins,
     renderLiveIndicator,
     didLoadAllEpgs,
     didLoadAllChannels,
     onScroll,
+    verticalScrollPosition,
   } = props;
 
   const largeListRef = useRef(null);
+  const liveIndicatorRef = useRef(null);
   const isFetchingVertically = useRef(null);
   const timeout = useRef(null);
   const isFetching = useRef(null);
+
   const [timeIndicatorOffset, setTimeIndicatorOffset] = useState(null);
+  const [channelListState, setChannelListState] = useState([]);
+  const [programListState, setProgramListState] = useState([]);
+  const [dataListFilter, setDataListFilter] = useState([]);
+  const [timelineData, setTimelineData] = useState([]);
+
   const visibleTimeIndicator = compareTwoDates(currentDate, today);
   const containerStylesFlattten = useMemo(
     () =>
@@ -71,10 +80,6 @@ function TVGuideComponent(props) {
       ]),
     [tvGuideWidth, tvGuideHeight, containerBackroundColor]
   );
-  const [channelListState, setChannelListState] = useState([]);
-  const [programListState, setProgramListState] = useState([]);
-  const [dataListFilter, setDataListFilter] = useState([]);
-  const [timelineData, setTimelineData] = useState([]);
 
   const getTimeIndicatorOffset = useCallback(() => {
     if (timelineData.length === 0) return 0;
@@ -145,6 +150,15 @@ function TVGuideComponent(props) {
     };
   }, []);
 
+  useEffect(() => {
+    if (programList.length) {
+      const endDate = new Date();
+      const days = Math.floor((programList[0].programs.length - 1) / 24) - 1;
+      endDate.setDate(endDate.getDate() + days);
+      setTimelineData([...generateTimelineData(endDate)]);
+    }
+  }, [programList]);
+
   const _onScroll = (e) => {
     const {
       nativeEvent: {
@@ -153,12 +167,13 @@ function TVGuideComponent(props) {
       },
     } = e;
     onScroll && onScroll(e);
-    if (
-      Math.floor(x) >=
-      Math.floor(timeIndicatorOffset + channelListWidth - timelineCellWidth)
-    ) {
-    } else {
-    }
+    const threshold =
+      timeIndicatorOffset +
+      timelineCellWidth -
+      (timeIndicatorOffset % (timelineCellWidth + gridMargins)) -
+      channelListWidth;
+    liveIndicatorRef.current &&
+      liveIndicatorRef.current.updateIndicatorOffset(e, threshold);
     if (
       x &&
       lastScrollHorizontalOffset &&
@@ -201,9 +216,13 @@ function TVGuideComponent(props) {
 
   const goToLive = () => {
     largeListRef.current.scrollTo(
-      { y: 0, x: timeIndicatorOffset - channelListWidth * 1.5 },
+      { y: 0, x: timeIndicatorOffset - channelListWidth - timelineCellWidth },
       false
     );
+  };
+
+  const onLiveIndicatorRef = (ref) => {
+    liveIndicatorRef.current = ref;
   };
 
   const _renderHeader = () => {
@@ -238,8 +257,9 @@ function TVGuideComponent(props) {
           flexDirection: "row",
           zIndex: 0,
         }}
+        key={section}
       >
-        {renderChannel({ item: channel, index: 0 })}
+        {renderChannel({ item: channel, index: section })}
         <View
           style={{
             marginLeft: gridMargins,
@@ -259,50 +279,55 @@ function TVGuideComponent(props) {
   };
 
   return (
-    <View>
-      <View style={containerStylesFlattten}>
-        <View style={styles.tvGuideContainer}>
-          <StickyForm
-            decelerationRate={0.1}
-            snapToOffsets={[
-              ...timelineData.map(
-                (x, i) => i * (timelineCellWidth + gridMargins)
-              ),
-            ]}
-            disableIntervalMomentum
-            snapToAlignment="start"
-            contentStyle={{
-              alignItems: "flex-start",
-              width: getWidth(),
-            }}
-            data={channelListState}
-            ref={(ref) => (largeListRef.current = ref)}
-            heightForSection={() => programLineHeight + gridMargins}
-            renderHeader={_renderHeader}
-            renderSection={_renderSection}
-            heightForIndexPath={() => 0}
-            renderIndexPath={_renderItem}
-            bounces={false}
-            initialContentOffset={{
-              x: timeIndicatorOffset - channelListWidth * 1.5,
-              y: 0,
-            }}
-            onScroll={_onScroll}
-          >
-            {() => (
-              <>
-                {renderLiveIndicator
-                  ? programListState.length || channelListState.length
-                    ? renderLiveIndicator({
-                        offset: timeIndicatorOffset + channelListWidth,
-                      })
-                    : null
-                  : null}
-              </>
-            )}
-          </StickyForm>
-        </View>
-      </View>
+    <View style={[containerStylesFlattten, {}]}>
+      <StickyForm
+        decelerationRate={"fast"}
+        snapToOffsets={[
+          ...timelineData.map(
+            (x, i) => i * ((timelineCellWidth + gridMargins) * 3)
+          ),
+        ]}
+        disableIntervalMomentum
+        snapToAlignment="start"
+        contentStyle={[
+          contentContainerStyle,
+          {
+            alignItems: "flex-start",
+            width: getWidth(),
+          },
+        ]}
+        data={channelListState}
+        ref={(ref) => (largeListRef.current = ref)}
+        heightForSection={() => programLineHeight + gridMargins}
+        renderHeader={_renderHeader}
+        renderSection={_renderSection}
+        heightForIndexPath={() => 0}
+        renderIndexPath={_renderItem}
+        bounces={false}
+        initialContentOffset={{
+          x: timeIndicatorOffset - channelListWidth - timelineCellWidth,
+          y: 0,
+        }}
+        onNativeContentOffsetExtract={{
+          y: verticalScrollPosition,
+        }}
+        showsHorizontalScrollIndicator={false}
+        showsVerticalScrollIndicator={false}
+        onScroll={_onScroll}
+      >
+        {() => (
+          <>
+            {renderLiveIndicator
+              ? programListState.length || channelListState.length
+                ? renderLiveIndicator({
+                    offset: timeIndicatorOffset + channelListWidth,
+                    onRef: onLiveIndicatorRef,
+                  })
+                : null
+              : null}
+          </>
+        )}
+      </StickyForm>
     </View>
   );
 }
