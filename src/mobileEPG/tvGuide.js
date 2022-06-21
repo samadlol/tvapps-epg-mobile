@@ -5,7 +5,7 @@ import React, {
   useRef,
   useMemo,
 } from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Dimensions, Text, Animated } from "react-native";
 import PropTypes from "prop-types";
 import { TV_GUIDE_CONSTANTS } from "./constants";
 import {
@@ -62,7 +62,6 @@ function TVGuideComponent(props) {
 
   const [timeIndicatorOffset, setTimeIndicatorOffset] = useState(null);
   const [channelListState, setChannelListState] = useState([]);
-  const [programListState, setProgramListState] = useState([]);
   const [dataListFilter, setDataListFilter] = useState([]);
   const [timelineData, setTimelineData] = useState([]);
 
@@ -92,23 +91,15 @@ function TVGuideComponent(props) {
   }, [timelineData]);
 
   useEffect(() => {
-    const channelsState = channeList.map((channel) => ({
-      channel,
-      items: [""],
-    }));
-    setChannelListState(channelsState);
-  }, [channeList]);
-
-  useEffect(() => {
-    setProgramListState([...programList]);
-  }, [programList]);
-
-  useEffect(() => {
-    if (programListState.length > 0 && lastScrollHorizontalOffset == null) {
+    if (
+      programList &&
+      Object.keys(programList).length > 0 &&
+      lastScrollHorizontalOffset == null
+    ) {
       const offsetTimeline = getTimeIndicatorOffset();
       largeListRef.current.scrollTo(offsetTimeline, 0, false);
     }
-  }, [programListState]);
+  }, [programList]);
 
   useEffect(() => {
     currentDateDisplay = new Date(currentDate);
@@ -151,9 +142,11 @@ function TVGuideComponent(props) {
   }, []);
 
   useEffect(() => {
-    if (programList.length) {
+    if (programList && Object.keys(programList).length > 0) {
       const endDate = new Date();
-      const days = Math.floor((programList[0].programs.length - 1) / 24) - 1;
+      const days =
+        Math.floor((programList[Object.keys(programList)[0]].length - 1) / 24) -
+        1;
       endDate.setDate(endDate.getDate() + days);
       setTimelineData([...generateTimelineData(endDate)]);
     }
@@ -178,7 +171,7 @@ function TVGuideComponent(props) {
       x &&
       lastScrollHorizontalOffset &&
       lastScrollHorizontalOffset !== x &&
-      x + timelineCellWidth * 3 >= width
+      x + timelineCellWidth * 6 >= width
     ) {
       onHorizontallyEndReached();
     }
@@ -186,7 +179,7 @@ function TVGuideComponent(props) {
       y &&
       lastScrollVerticalOffset &&
       lastScrollVerticalOffset !== y &&
-      y + 1000 >= height
+      y + 1000 + (contentContainerStyle?.paddingBottom ?? 0) >= height
     ) {
       onVerticallyEndReached();
     }
@@ -216,7 +209,10 @@ function TVGuideComponent(props) {
 
   const goToLive = () => {
     largeListRef.current.scrollTo(
-      { y: 0, x: timeIndicatorOffset - channelListWidth - timelineCellWidth },
+      {
+        y: lastScrollVerticalOffset,
+        x: timeIndicatorOffset - channelListWidth - timelineCellWidth,
+      },
       false
     );
   };
@@ -248,7 +244,7 @@ function TVGuideComponent(props) {
   };
 
   const _renderSection = (section) => {
-    const channel = channelListState[section].channel;
+    const channel = channeList[section];
     return (
       <View
         style={{
@@ -259,15 +255,20 @@ function TVGuideComponent(props) {
         }}
         key={section}
       >
-        {renderChannel({ item: channel, index: section })}
+        {renderChannel({ item: channel.channel, index: section })}
         <View
           style={{
             marginLeft: gridMargins,
             flexDirection: "row",
           }}
         >
-          {timelineData.map((title, index) =>
-            renderEpgItem({ item: title, index, channel, rowIndex: section })
+          {channel.items?.map((title, index) =>
+            renderEpgItem({
+              item: title,
+              index,
+              channel: channel.channel,
+              rowIndex: section,
+            })
           )}
         </View>
       </View>
@@ -281,22 +282,19 @@ function TVGuideComponent(props) {
   return (
     <View style={[containerStylesFlattten, {}]}>
       <StickyForm
-        decelerationRate={"fast"}
+        decelerationRate={0.1}
         snapToOffsets={[
           ...timelineData.map(
             (x, i) => i * ((timelineCellWidth + gridMargins) * 3)
           ),
         ]}
-        disableIntervalMomentum
         snapToAlignment="start"
-        contentStyle={[
-          contentContainerStyle,
-          {
-            alignItems: "flex-start",
-            width: getWidth(),
-          },
-        ]}
-        data={channelListState}
+        contentStyle={{
+          alignItems: "flex-start",
+          width: getWidth(),
+          ...contentContainerStyle,
+        }}
+        data={channeList}
         ref={(ref) => (largeListRef.current = ref)}
         heightForSection={() => programLineHeight + gridMargins}
         renderHeader={_renderHeader}
@@ -311,6 +309,10 @@ function TVGuideComponent(props) {
         onNativeContentOffsetExtract={{
           y: verticalScrollPosition,
         }}
+        directionalLockEnabled
+        groupCount={channeList.length}
+        // groupMinHeight={20 * programLineHeight}
+        updateTimeInterval={4}
         showsHorizontalScrollIndicator={false}
         showsVerticalScrollIndicator={false}
         onScroll={_onScroll}
@@ -318,7 +320,7 @@ function TVGuideComponent(props) {
         {() => (
           <>
             {renderLiveIndicator
-              ? programListState.length || channelListState.length
+              ? channeList.length
                 ? renderLiveIndicator({
                     offset: timeIndicatorOffset + channelListWidth,
                     onRef: onLiveIndicatorRef,
@@ -334,7 +336,7 @@ function TVGuideComponent(props) {
 
 TVGuideComponent.propTypes = {
   channeList: PropTypes.array.isRequired,
-  programList: PropTypes.array.isRequired,
+  programList: PropTypes.object.isRequired,
   onProgramSelectedChange: PropTypes.func.isRequired,
   tvGuideWidth: PropTypes.number.isRequired,
   tvGuideHeight: PropTypes.number.isRequired,
