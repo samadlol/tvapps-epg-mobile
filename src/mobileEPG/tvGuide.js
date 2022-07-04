@@ -166,9 +166,7 @@ function TVGuideComponent(props) {
       },
     } = e;
     onScroll && onScroll(e);
-    const threshold =
-      timeIndicatorOffset -
-      (channelListWidth + gridMargins + (style?.paddingLeft ?? 0));
+    const threshold = timeIndicatorOffset - (channelListWidth + gridMargins);
     liveIndicatorRef.current &&
       liveIndicatorRef.current.updateIndicatorOffset(e, threshold);
     if (
@@ -284,6 +282,7 @@ function TVGuideComponent(props) {
   return (
     <View style={[containerStylesFlattten, {}]}>
       <StickyForm
+        scrollsToTop={false}
         decelerationRate={0.05}
         snapToOffsets={
           snapToInterval
