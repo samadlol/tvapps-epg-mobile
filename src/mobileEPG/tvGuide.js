@@ -5,7 +5,7 @@ import React, {
   useRef,
   useMemo,
 } from "react";
-import { View, StyleSheet, Dimensions, Text, Animated } from "react-native";
+import { View, StyleSheet } from "react-native";
 import PropTypes from "prop-types";
 import { TV_GUIDE_CONSTANTS } from "./constants";
 import {
@@ -53,6 +53,7 @@ function TVGuideComponent(props) {
     didLoadAllChannels,
     onScroll,
     verticalScrollPosition,
+    snapToInterval,
   } = props;
 
   const largeListRef = useRef(null);
@@ -88,17 +89,10 @@ function TVGuideComponent(props) {
     return (
       (Math.abs(now.getTime() - timelineData[0].start) /
         TV_GUIDE_CONSTANTS.HALF_HOUR_DURATION) *
-      (timelineCellWidth + gridMargins)
+        (timelineCellWidth + gridMargins) +
+      channelListWidth
     );
   }, [timelineData]);
-
-  useEffect(() => {
-    // const channelsState = channeList.map((channel) => ({
-    //   channel,
-    //   items: [""],
-    // }));
-    // setChannelListState(channelsState);
-  }, [channeList]);
 
   useEffect(() => {
     try {
@@ -173,10 +167,8 @@ function TVGuideComponent(props) {
     } = e;
     onScroll && onScroll(e);
     const threshold =
-      timeIndicatorOffset +
-      timelineCellWidth -
-      (timeIndicatorOffset % (timelineCellWidth + gridMargins)) -
-      channelListWidth;
+      timeIndicatorOffset -
+      (channelListWidth + gridMargins + (style?.paddingLeft ?? 0));
     liveIndicatorRef.current &&
       liveIndicatorRef.current.updateIndicatorOffset(e, threshold);
     if (
@@ -223,7 +215,7 @@ function TVGuideComponent(props) {
     largeListRef.current.scrollTo(
       {
         y: lastScrollVerticalOffset,
-        x: timeIndicatorOffset - channelListWidth - timelineCellWidth,
+        x: timeIndicatorOffset - channelListWidth - timelineCellWidth / 2,
       },
       false
     );
@@ -261,16 +253,13 @@ function TVGuideComponent(props) {
       <View
         style={{
           flex: 1,
-          // justifyContent: "flex-start",
           flexDirection: "row",
-          // zIndex: 0,
         }}
         key={section + "-" + channel.channel.id}
       >
         {renderChannel({ item: channel.channel, index: section })}
         <View
           style={{
-            // marginLeft: gridMargins,
             flexDirection: "row",
           }}
           key={section + "-" + channel.channel.id}
@@ -296,11 +285,11 @@ function TVGuideComponent(props) {
     <View style={[containerStylesFlattten, {}]}>
       <StickyForm
         decelerationRate={0.05}
-        snapToOffsets={[
-          ...timelineData.map(
-            (x, i) => i * ((timelineCellWidth + gridMargins) * 3)
-          ),
-        ]}
+        snapToOffsets={
+          snapToInterval
+            ? [...timelineData.map((x, i) => i * snapToInterval)]
+            : null
+        }
         snapToAlignment="start"
         contentStyle={{
           alignItems: "flex-start",
@@ -320,7 +309,7 @@ function TVGuideComponent(props) {
         renderIndexPath={_renderItem}
         bounces={false}
         initialContentOffset={{
-          x: timeIndicatorOffset - channelListWidth - timelineCellWidth,
+          x: Math.floor(timeIndicatorOffset - channelListWidth),
           y: 0,
         }}
         onNativeContentOffsetExtract={{
@@ -338,7 +327,7 @@ function TVGuideComponent(props) {
             {renderLiveIndicator
               ? channeList.length
                 ? renderLiveIndicator({
-                    offset: timeIndicatorOffset + channelListWidth,
+                    offset: timeIndicatorOffset,
                     onRef: onLiveIndicatorRef,
                   })
                 : null
