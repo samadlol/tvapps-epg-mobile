@@ -40,6 +40,7 @@ function TVGuideComponent(props) {
     containerBackroundColor,
     programLineHeight,
     selectedProgramLineHeight,
+    activeChannelIndex,
     renderChannel,
     renderEpgItem,
     renderTimeLineItem,
@@ -63,10 +64,8 @@ function TVGuideComponent(props) {
   const isFetching = useRef(null);
 
   const [timeIndicatorOffset, setTimeIndicatorOffset] = useState(null);
-  const [channelListState, setChannelListState] = useState([]);
   const [dataListFilter, setDataListFilter] = useState([]);
   const [timelineData, setTimelineData] = useState([]);
-  const [enableAnimation, setEnableAnimation] = useState(false);
 
   const visibleTimeIndicator = compareTwoDates(currentDate, today);
   const containerStylesFlattten = useMemo(
@@ -298,7 +297,7 @@ function TVGuideComponent(props) {
         data={channeList}
         ref={(ref) => (largeListRef.current = ref)}
         heightForSection={(section) =>
-          section === 0
+          section === activeChannelIndex
             ? selectedProgramLineHeight + gridMargins
             : programLineHeight + gridMargins
         }
