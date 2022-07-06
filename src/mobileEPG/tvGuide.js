@@ -55,6 +55,7 @@ function TVGuideComponent(props) {
     onScroll,
     verticalScrollPosition,
     snapToInterval,
+    onGoToLive,
   } = props;
 
   const largeListRef = useRef(null);
@@ -125,6 +126,10 @@ function TVGuideComponent(props) {
       setTimeIndicatorOffset(getTimeIndicatorOffset());
     }
   }, [timelineData]);
+
+  useEffect(() => {
+    onGoToLive && onGoToLive(goToLive);
+  }, [timeIndicatorOffset]);
 
   useEffect(() => {
     setTimelineData([...generateTimelineData(currentDateDisplay)]);
@@ -344,12 +349,12 @@ function TVGuideComponent(props) {
 }
 
 TVGuideComponent.propTypes = {
-  channeList: PropTypes.array.isRequired,
-  programList: PropTypes.object.isRequired,
-  onProgramSelectedChange: PropTypes.func.isRequired,
-  tvGuideWidth: PropTypes.number.isRequired,
-  tvGuideHeight: PropTypes.number.isRequired,
-  sizePerPage: PropTypes.number.isRequired,
+  channeList: PropTypes.array,
+  programList: PropTypes.object,
+  onProgramSelectedChange: PropTypes.func,
+  tvGuideWidth: PropTypes.number,
+  tvGuideHeight: PropTypes.number,
+  sizePerPage: PropTypes.number,
   timeLineHeaderHeight: PropTypes.number,
   numberOfChannelsDisplayed: PropTypes.number,
   numberOfTimelineCellDisplayed: PropTypes.number,
