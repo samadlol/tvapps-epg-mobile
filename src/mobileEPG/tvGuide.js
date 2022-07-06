@@ -82,6 +82,12 @@ function TVGuideComponent(props) {
     [tvGuideWidth, tvGuideHeight, containerBackroundColor]
   );
 
+  const getYAxisPosition = useMemo(() => {
+    return activeChannelIndex
+      ? activeChannelIndex * (programLineHeight + gridMargins)
+      : 0;
+  }, [activeChannelIndex]);
+
   const getTimeIndicatorOffset = useCallback(() => {
     if (timelineData.length === 0) return 0;
     const now = new Date();
@@ -211,7 +217,7 @@ function TVGuideComponent(props) {
   const goToLive = () => {
     largeListRef.current.scrollTo(
       {
-        y: lastScrollVerticalOffset,
+        y: getYAxisPosition || lastScrollVerticalOffset,
         x: timeIndicatorOffset - channelListWidth - timelineCellWidth / 2,
       },
       false
@@ -308,9 +314,7 @@ function TVGuideComponent(props) {
         bounces={false}
         initialContentOffset={{
           x: timeIndicatorOffset - channelListWidth - timelineCellWidth / 2,
-          y: activeChannelIndex
-            ? activeChannelIndex * (programLineHeight + gridMargins)
-            : 0,
+          y: getYAxisPosition,
         }}
         onNativeContentOffsetExtract={{
           y: verticalScrollPosition,
