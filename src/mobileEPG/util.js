@@ -38,10 +38,10 @@ export function formatHourMin(timestamp) {
   }
 }
 
-const userTimezoneDate = (date) => {
+export const userTimezoneDate = (date) => {
   const _date = new Date(date.getTime());
-  const userTimeZoneOffset = _date.getTimezoneOffset() * 60000;
-  return new Date(_date.getTime() + userTimeZoneOffset);
+  // const userTimeZoneOffset = _date.getTimezoneOffset() * 60000;
+  return new Date(_date.getTime());
 };
 
 export const generateTimelineData = (day) => {
