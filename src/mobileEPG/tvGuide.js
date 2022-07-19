@@ -8,14 +8,8 @@ import React, {
 import { View, StyleSheet, Dimensions } from "react-native";
 import PropTypes from "prop-types";
 import { TV_GUIDE_CONSTANTS } from "./constants";
-import {
-  generateTimelineData,
-  compareTwoDates,
-  getDataListFilter,
-} from "./util";
+import { generateTimelineData, userTimezoneDate } from "./util";
 import { StickyForm } from "react-native-largelist";
-
-const today = new Date();
 
 var timelineTimeOutRef, programsTimeOutRef;
 var currentDateDisplay = new Date();
@@ -54,6 +48,7 @@ function TVGuideComponent(props) {
     horizontalScrollPosition,
     snapToInterval,
     onGoToLive,
+    nativeOffset,
   } = props;
 
   const largeListRef = useRef(null);
@@ -94,7 +89,7 @@ function TVGuideComponent(props) {
 
   const getTimeIndicatorOffset = useCallback(() => {
     if (timelineData.length === 0) return 0;
-    const now = new Date();
+    const now = userTimezoneDate(new Date());
     const offset =
       (Math.abs(now.getTime() - timelineData[0].start) /
         TV_GUIDE_CONSTANTS.HALF_HOUR_DURATION) *
@@ -236,7 +231,7 @@ function TVGuideComponent(props) {
     );
   };
 
-  const _renderSection = (section) => {
+  const _renderSection = (section, scrollX) => {
     const channel = channeList[section];
     return (
       <View
@@ -259,6 +254,7 @@ function TVGuideComponent(props) {
               index,
               channel: channel.channel,
               rowIndex: section,
+              scrollX: _nativeOffset.x,
             })
           )}
         </View>
@@ -307,17 +303,22 @@ function TVGuideComponent(props) {
         heightForIndexPath={() => 0}
         renderIndexPath={_renderItem}
         bounces={false}
-        // initialContentOffset={{
-        //   x: (timeIndicatorOffset - channelListWidth - (timelineCellWidth/2)),
-        //   y: getYAxisPosition,
-        // }}
-        onNativeContentOffsetExtract={_nativeOffset}
+        initialContentOffset={{
+          x: timeIndicatorOffset - channelListWidth - timelineCellWidth / 2,
+          y: getYAxisPosition,
+        }}
+        onNativeContentOffsetExtract={{
+          x: horizontalScrollPosition,
+          y: verticalScrollPosition,
+        }}
         directionalLockEnabled={true}
         disableIntervalMomentum
         showsHorizontalScrollIndicator={false}
         showsVerticalScrollIndicator={false}
         onScroll={_onScroll}
-        groupCount={2}
+        groupCount={9}
+        groupMinHeight={tvGuideHeight}
+        allLoaded
       >
         {() => (
           <>
