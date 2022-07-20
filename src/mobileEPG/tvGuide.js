@@ -189,7 +189,13 @@ function TVGuideComponent(props) {
     largeListRef.current.scrollTo(
       {
         y: getYAxisPosition,
-        x: timeIndicatorOffset - channelListWidth - timelineCellWidth / 2,
+        x:
+          getWidth() -
+            (timelineCellWidth + gridMargins) * 3 -
+            channelListWidth <=
+          timeIndicatorOffset - channelListWidth - timelineCellWidth / 2
+            ? getWidth() - Dimensions.get("screen").width - channelListWidth
+            : timeIndicatorOffset - channelListWidth - timelineCellWidth / 2,
       },
       false
     );
