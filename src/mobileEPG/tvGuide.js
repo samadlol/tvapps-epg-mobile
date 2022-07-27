@@ -48,7 +48,9 @@ function TVGuideComponent(props) {
     horizontalScrollPosition,
     snapToInterval,
     onGoToLive,
-    nativeOffset,
+    scrollEnabled = true,
+    onScrollBeginDrag,
+    bounces = false,
   } = props;
 
   const largeListRef = useRef(null);
@@ -57,10 +59,6 @@ function TVGuideComponent(props) {
   const isFetchingVertically = useRef(null);
   const isFetching = useRef(null);
   const didScrollToInitialOffset = useRef(false);
-  const _nativeOffset = useRef({
-    y: verticalScrollPosition,
-    x: horizontalScrollPosition,
-  }).current;
 
   const [timeIndicatorOffset, setTimeIndicatorOffset] = useState(null);
   const [timelineData, setTimelineData] = useState(
@@ -89,11 +87,12 @@ function TVGuideComponent(props) {
 
   const getTimeIndicatorOffset = useCallback(() => {
     if (timelineData.length === 0) return 0;
-    const now = userTimezoneDate(new Date());
+    const now = new Date();
+    const diff =
+      Math.abs(now.getTime() - timelineData[0].start) /
+      TV_GUIDE_CONSTANTS.HALF_HOUR_DURATION;
     const offset =
-      (Math.abs(now.getTime() - timelineData[0].start) /
-        TV_GUIDE_CONSTANTS.HALF_HOUR_DURATION) *
-        (timelineCellWidth + gridMargins) +
+      (diff > 48 ? diff - 48 : diff) * (timelineCellWidth + gridMargins) +
       channelListWidth;
     return offset;
   }, [timelineData]);
@@ -224,7 +223,7 @@ function TVGuideComponent(props) {
         ) : (
           <View style={{ width: channelListWidth }} />
         )}
-        {!!renderCurrentTimeView
+        {!!renderCurrentTimeView && channeList.length > 0
           ? renderCurrentTimeView({
               offset: timeIndicatorOffset,
               onRef: onCurrentTimeViewRef,
@@ -260,7 +259,7 @@ function TVGuideComponent(props) {
               index,
               channel: channel.channel,
               rowIndex: section,
-              scrollX: _nativeOffset.x,
+              scrollX: horizontalScrollPosition,
             })
           )}
         </View>
@@ -274,9 +273,6 @@ function TVGuideComponent(props) {
 
   const _onLayout = () => {
     if (didScrollToInitialOffset.current == true) return;
-    setTimeout(() => {
-      goToLive();
-    }, 1000);
     didScrollToInitialOffset.current = true;
   };
 
@@ -285,6 +281,7 @@ function TVGuideComponent(props) {
       <StickyForm
         onLayout={_onLayout}
         scrollsToTop={false}
+        scrollEnabled={scrollEnabled}
         decelerationRate={0.05}
         snapToOffsets={
           snapToInterval
@@ -308,7 +305,7 @@ function TVGuideComponent(props) {
         renderSection={_renderSection}
         heightForIndexPath={() => 0}
         renderIndexPath={_renderItem}
-        bounces={false}
+        bounces={bounces}
         initialContentOffset={{
           x: timeIndicatorOffset - channelListWidth - timelineCellWidth / 2,
           y: getYAxisPosition,
@@ -325,6 +322,7 @@ function TVGuideComponent(props) {
         groupCount={9}
         groupMinHeight={tvGuideHeight}
         allLoaded
+        onScrollBeginDrag={onScrollBeginDrag}
       >
         {() => (
           <>

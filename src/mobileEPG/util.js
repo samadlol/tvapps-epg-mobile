@@ -40,8 +40,8 @@ export function formatHourMin(timestamp) {
 
 export const userTimezoneDate = (date) => {
   const _date = new Date(date.getTime());
-  // const userTimeZoneOffset = _date.getTimezoneOffset() * 60000;
-  return new Date(_date.getTime());
+  const userTimeZoneOffset = _date.getTimezoneOffset() / 60;
+  return new Date(_date.getTime() + userTimeZoneOffset * 3600 * 1000);
 };
 
 export const generateTimelineData = (day) => {
