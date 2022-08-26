@@ -98,6 +98,14 @@ function TVGuideComponent(props) {
   }, [timelineData]);
 
   useEffect(() => {
+    if (!scrollEnabled && lastScrollVerticalOffset < 0)
+      largeListRef.current?.scrollTo(
+        { x: lastScrollHorizontalOffset, y: 0 },
+        true
+      );
+  }, [scrollEnabled]);
+
+  useEffect(() => {
     if (timelineData.length > 0 && !timeIndicatorOffset) {
       setTimeIndicatorOffset(getTimeIndicatorOffset());
     }
@@ -253,9 +261,9 @@ function TVGuideComponent(props) {
           }}
           key={section + "-" + channel.channel.id}
         >
-          {channel.items.map((title, index) =>
+          {channel.items.map((item, index) =>
             renderEpgItem({
-              item: title,
+              item,
               index,
               channel: channel.channel,
               rowIndex: section,
