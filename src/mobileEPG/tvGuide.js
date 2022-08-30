@@ -80,7 +80,7 @@ function TVGuideComponent(props) {
   );
 
   const getYAxisPosition = useMemo(() => {
-    return activeChannelIndex
+    return activeChannelIndex > -1
       ? activeChannelIndex * (programLineHeight + gridMargins)
       : 0;
   }, [activeChannelIndex]);
