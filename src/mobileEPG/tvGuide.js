@@ -197,10 +197,12 @@ function TVGuideComponent(props) {
       {
         y: getYAxisPosition,
         x:
-          getWidth() -
-            (timelineCellWidth + gridMargins) * 3 -
-            channelListWidth <=
-          timeIndicatorOffset - channelListWidth - timelineCellWidth / 2
+          timeIndicatorOffset < timelineCellWidth
+            ? 0
+            : getWidth() -
+                (timelineCellWidth + gridMargins) * 3 -
+                channelListWidth <=
+              timeIndicatorOffset - channelListWidth - timelineCellWidth / 2
             ? getWidth() - Dimensions.get("screen").width - channelListWidth
             : timeIndicatorOffset - channelListWidth - timelineCellWidth / 2,
       },
