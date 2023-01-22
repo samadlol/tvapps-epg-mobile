@@ -51,6 +51,7 @@ function TVGuideComponent(props) {
     scrollEnabled = true,
     onScrollBeginDrag,
     bounces = false,
+    onScrollToTop,
   } = props;
 
   const largeListRef = useRef(null);
@@ -112,7 +113,12 @@ function TVGuideComponent(props) {
   }, [timelineData]);
 
   useEffect(() => {
+    onScrollToTop && onScrollToTop(scrollToTop);
+  }, [channeList, channeList?.length, largeListRef]);
+
+  useEffect(() => {
     onGoToLive && onGoToLive(goToLive);
+    onScrollToTop && onScrollToTop(scrollToTop);
   }, [timeIndicatorOffset, activeChannelIndex]);
 
   useEffect(() => {
@@ -196,6 +202,24 @@ function TVGuideComponent(props) {
     largeListRef.current.scrollTo(
       {
         y: getYAxisPosition,
+        x:
+          timeIndicatorOffset < timelineCellWidth
+            ? 0
+            : getWidth() -
+                (timelineCellWidth + gridMargins) * 3 -
+                channelListWidth <=
+              timeIndicatorOffset - channelListWidth - timelineCellWidth / 2
+            ? getWidth() - Dimensions.get("screen").width - channelListWidth
+            : timeIndicatorOffset - channelListWidth - timelineCellWidth / 2,
+      },
+      false
+    );
+  };
+
+  const scrollToTop = () => {
+    largeListRef.current.scrollTo(
+      {
+        y: 0,
         x:
           timeIndicatorOffset < timelineCellWidth
             ? 0
