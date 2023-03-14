@@ -343,7 +343,10 @@ function TVGuideComponent(props) {
         renderIndexPath={_renderItem}
         bounces={bounces}
         initialContentOffset={{
-          x: timeIndicatorOffset - channelListWidth - timelineCellWidth / 2,
+          x: Math.max(
+            0,
+            timeIndicatorOffset - channelListWidth - timelineCellWidth / 2
+          ),
           y: getYAxisPosition,
         }}
         onNativeContentOffsetExtract={{
