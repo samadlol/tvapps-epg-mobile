@@ -10,7 +10,6 @@ import PropTypes from "prop-types";
 import { TV_GUIDE_CONSTANTS } from "./constants";
 import { generateTimelineData, userTimezoneDate } from "./util";
 import { StickyForm } from "react-native-largelist";
-
 var timelineTimeOutRef, programsTimeOutRef;
 var currentDateDisplay = new Date();
 var loadingTimeoutRef;
@@ -63,7 +62,7 @@ function TVGuideComponent(props) {
 
   const [timeIndicatorOffset, setTimeIndicatorOffset] = useState(null);
   const [timelineData, setTimelineData] = useState(
-    generateTimelineData(currentDateDisplay)
+    generateTimelineData(currentDateDisplay),
   );
 
   const containerStylesFlattten = useMemo(
@@ -77,12 +76,14 @@ function TVGuideComponent(props) {
         },
         style,
       ]),
-    [tvGuideWidth, tvGuideHeight, containerBackroundColor]
+    [tvGuideWidth, tvGuideHeight, containerBackroundColor],
   );
 
   const getYAxisPosition = useMemo(() => {
     return activeChannelIndex > -1
-      ? activeChannelIndex * (programLineHeight + gridMargins)
+      ? activeChannelIndex == channeList?.length - 1
+        ? (activeChannelIndex - 1) * (programLineHeight + gridMargins)
+        : activeChannelIndex * (programLineHeight + gridMargins)
       : 0;
   }, [activeChannelIndex]);
 
@@ -102,7 +103,7 @@ function TVGuideComponent(props) {
     if (!scrollEnabled && lastScrollVerticalOffset < 0)
       largeListRef.current?.scrollTo(
         { x: lastScrollHorizontalOffset, y: 0 },
-        true
+        true,
       );
   }, [scrollEnabled]);
 
@@ -212,7 +213,7 @@ function TVGuideComponent(props) {
             ? getWidth() - Dimensions.get("screen").width - channelListWidth
             : timeIndicatorOffset - channelListWidth - timelineCellWidth / 2,
       },
-      false
+      false,
     );
   };
 
@@ -232,7 +233,7 @@ function TVGuideComponent(props) {
               : timeIndicatorOffset - channelListWidth - timelineCellWidth / 2
             : x,
       },
-      false
+      false,
     );
   };
 
@@ -266,7 +267,7 @@ function TVGuideComponent(props) {
             })
           : null}
         {timelineData.map((title, index) =>
-          renderTimeLineItem({ item: title, index })
+          renderTimeLineItem({ item: title, index }),
         )}
       </View>
     );
@@ -296,7 +297,7 @@ function TVGuideComponent(props) {
               channel: channel.channel,
               rowIndex: section,
               scrollX: horizontalScrollPosition,
-            })
+            }),
           )}
         </View>
       </View>
@@ -304,7 +305,7 @@ function TVGuideComponent(props) {
   };
 
   const _renderItem = (path) => {
-    return <View />;
+    return null;
   };
 
   const _onLayout = () => {
@@ -345,7 +346,7 @@ function TVGuideComponent(props) {
         initialContentOffset={{
           x: Math.max(
             0,
-            timeIndicatorOffset - channelListWidth - timelineCellWidth / 2
+            timeIndicatorOffset - channelListWidth - timelineCellWidth / 2,
           ),
           y: getYAxisPosition,
         }}
@@ -358,7 +359,7 @@ function TVGuideComponent(props) {
         showsHorizontalScrollIndicator={false}
         showsVerticalScrollIndicator={false}
         onScroll={_onScroll}
-        groupCount={9}
+        groupCount={20}
         groupMinHeight={tvGuideHeight}
         allLoaded
         onScrollBeginDrag={onScrollBeginDrag}
